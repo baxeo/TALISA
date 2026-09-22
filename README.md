@@ -12,7 +12,44 @@ Use one command to start both services:
 
 The public frontend is available at `http://localhost:4173` and the backend API is available at `http://localhost:5000`.
 
+Public website-only link:
+
+    http://localhost:5000/website
+
+This link shows only the BAXEO storefront. The internal sales dashboard remains at the root URL:
+
+    http://localhost:5000/
+
+## Vercel public website deployment
+
+Import this repository into Vercel with these settings:
+
+    Framework preset: Vite
+    Build command: npm run build
+    Output directory: dist
+
+Add this Vercel environment variable:
+
+    VITE_PUBLIC_SITE_ONLY=true
+
+After deployment, the Vercel domain root opens only the public website:
+
+    https://your-project.vercel.app/
+
+The backend in `server.js` is not deployed by Vercel as a persistent Node server. Deploy it separately on Render, Railway, or another Node host, then add its URL as a frontend environment variable when you are ready to connect production data.
+
 You can confirm the backend directly at `http://localhost:5000/api/health` or view products at `http://localhost:5000/api/products`.
+
+## Customer database
+
+Customer records are persisted in `data/customers.json` through the backend API:
+
+    GET    /api/customers
+    POST   /api/customers
+    PUT    /api/customers/:id
+    DELETE /api/customers/:id
+
+The Customers tab uses these routes to store names, buyer type, segment, phone, email, follow-up date, priority, and notes. On hosting, use persistent disk storage or replace this file repository with PostgreSQL, MongoDB, or Supabase so records survive deployments.
 
 Start the Vite frontend:
 

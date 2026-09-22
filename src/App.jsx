@@ -224,16 +224,23 @@ function SectionLabel({ children }) {
 
 // ---------- Main App ----------
 export default function SupermarketDashboard() {
+  const isHostedWebsite = window.location.hostname !== "localhost"
+    && window.location.hostname !== "127.0.0.1";
+  const isPublicWebsite = import.meta.env.VITE_PUBLIC_SITE_ONLY === "true"
+    || isHostedWebsite
+    || window.location.pathname === "/website"
+    || window.location.pathname === "/website/";
   const [rows, setRows] = useState([]);
   const [inputMode, setInputMode] = useState("upload");
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
-  const [view, setView] = useState("overview");
+  const [view, setView] = useState(isPublicWebsite ? "storefront" : "overview");
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [products, setProducts] = useState(SAMPLE_PRODUCTS);
   const [customers, setCustomers] = useState(SAMPLE_CUSTOMERS);
   const [newProduct, setNewProduct] = useState({ name: "", grade: "Premium", largePrice: "", smallPrice: "", stock: "" });
+  const [newCustomer, setNewCustomer] = useState({ name: "", type: BUYER_TYPES[0], segment: "Local", phone: "", email: "", nextFollowUp: "", priority: "Medium", notes: "" });
   const [storefrontCategory, setStorefrontCategory] = useState("All products");
   const [backendStatus, setBackendStatus] = useState("checking");
   const fileInputRef = useRef(null);
@@ -457,6 +464,33 @@ export default function SupermarketDashboard() {
     window.open(`https://wa.me/256700000000?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
+  async function addCustomer() {
+    if (!newCustomer.name) return;
+    try {
+      const response = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCustomer),
+      });
+      if (!response.ok) return;
+      const savedCustomer = await response.json();
+      setCustomers((prev) => [...prev, savedCustomer]);
+      setNewCustomer({ name: "", type: BUYER_TYPES[0], segment: "Local", phone: "", email: "", nextFollowUp: "", priority: "Medium", notes: "" });
+    } catch (error) {
+      setBackendStatus("offline");
+    }
+  }
+
+  async function deleteCustomer(customerId) {
+    try {
+      const response = await fetch(`/api/customers/${customerId}`, { method: "DELETE" });
+      if (!response.ok) return;
+      setCustomers((prev) => prev.filter((customer) => customer.id !== customerId));
+    } catch (error) {
+      setBackendStatus("offline");
+    }
+  }
+
   return (
     <div style={{
       fontFamily: "'Inter', sans-serif",
@@ -503,21 +537,21 @@ export default function SupermarketDashboard() {
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
             <Receipt size={20} color={COLORS.amber} />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: COLORS.amber, letterSpacing: "0.15em", textTransform: "uppercase" }}>BAXEO SALES INSIGHT</span>
-            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${backendStatus === "connected" ? "#9BC5A8" : "#D7B27A"}`, color: backendStatus === "connected" ? "#D9F1DE" : COLORS.amberSoft, borderRadius: 999, padding: "5px 9px", fontSize: 10, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: COLORS.amber, letterSpacing: "0.15em", textTransform: "uppercase" }}>{isPublicWebsite ? "BAXEO AFRICA" : "BAXEO SALES INSIGHT"}</span>
+            {!isPublicWebsite && <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${backendStatus === "connected" ? "#9BC5A8" : "#D7B27A"}`, color: backendStatus === "connected" ? "#D9F1DE" : COLORS.amberSoft, borderRadius: 999, padding: "5px 9px", fontSize: 10, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: backendStatus === "connected" ? "#7BD18D" : COLORS.amber }} />
               {backendStatus === "connected" ? "Frontend + backend connected" : backendStatus === "checking" ? "Checking backend" : "Frontend demo mode"}
-            </span>
+            </span>}
           </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 44, textTransform: "uppercase", letterSpacing: "0.01em", color: "#fff", margin: "4px 0 8px 0" }}>BAXEO SALES INSIGHT</h1>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 44, textTransform: "uppercase", letterSpacing: "0.01em", color: "#fff", margin: "4px 0 8px 0" }}>{isPublicWebsite ? "Premium cashews from BAXEO Africa" : "BAXEO SALES INSIGHT"}</h1>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: COLORS.sage, maxWidth: 560, lineHeight: 1.5 }}>
-            Track daily sales, customer buying behavior, and product performance — upload a file or enter data manually — and monitor revenue, top sellers, repeat buyers, and sales trends in one clear dashboard.
+            {isPublicWebsite ? "Quality cashew kernels for retail, wholesale, and export buyers." : "Track daily sales, customer buying behavior, and product performance — upload a file or enter data manually — and monitor revenue, top sellers, repeat buyers, and sales trends in one clear dashboard."}
           </p>
         </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px" }}>
-        <div style={{ marginTop: 28, marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {!isPublicWebsite && <div style={{ marginTop: 28, marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
           {[
             { key: "overview", label: "Overview" },
             { key: "customers", label: "Customers" },
@@ -542,7 +576,7 @@ export default function SupermarketDashboard() {
               {tab.label}
             </button>
           ))}
-        </div>
+        </div>}
 
         {view === "overview" && (
           <>
@@ -679,13 +713,26 @@ export default function SupermarketDashboard() {
         )}
 
         {view === "customers" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18, marginTop: 24 }}>
+          <div style={{ marginTop: 24 }}>
+            <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 18, marginBottom: 18 }}>
+              <SectionLabel>Add Customer Record</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
+                <Field label="Customer name"><input value={newCustomer.name} onChange={(e) => setNewCustomer((form) => ({ ...form, name: e.target.value }))} placeholder="Company or buyer name" style={inputStyle} /></Field>
+                <Field label="Buyer type"><select value={newCustomer.type} onChange={(e) => setNewCustomer((form) => ({ ...form, type: e.target.value }))} style={inputStyle}>{BUYER_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
+                <Field label="Segment"><select value={newCustomer.segment} onChange={(e) => setNewCustomer((form) => ({ ...form, segment: e.target.value }))} style={inputStyle}>{["Local", "Regional", "Export"].map((segment) => <option key={segment}>{segment}</option>)}</select></Field>
+                <Field label="Phone"><input value={newCustomer.phone} onChange={(e) => setNewCustomer((form) => ({ ...form, phone: e.target.value }))} placeholder="+256..." style={inputStyle} /></Field>
+                <Field label="Email"><input type="email" value={newCustomer.email} onChange={(e) => setNewCustomer((form) => ({ ...form, email: e.target.value }))} placeholder="buyer@email.com" style={inputStyle} /></Field>
+                <Field label="Follow-up"><input type="date" value={newCustomer.nextFollowUp} onChange={(e) => setNewCustomer((form) => ({ ...form, nextFollowUp: e.target.value }))} style={inputStyle} /></Field>
+                <button onClick={addCustomer} style={{ padding: "10px 14px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600, height: 38 }}><Plus size={14} /> Add</button>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
             <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 18 }}>
               <SectionLabel>Customer Database</SectionLabel>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr style={{ background: COLORS.paper, color: COLORS.inkSoft }}><th style={tableHeadStyle}>Customer</th><th style={tableHeadStyle}>Buyer type</th><th style={tableHeadStyle}>Segment</th><th style={tableHeadStyle}>Last order</th><th style={tableHeadStyle}>Next follow-up</th></tr></thead>
-                  <tbody>{customers.map((customer) => <tr key={customer.id} className="row-hover" style={{ borderBottom: `1px solid ${COLORS.paperEdge}` }}><td style={tableCellStyle}>{customer.name}</td><td style={tableCellStyle}>{customer.type}</td><td style={tableCellStyle}>{customer.segment}</td><td style={tableCellStyle}>{customer.lastOrder}</td><td style={tableCellStyle}>{customer.nextFollowUp}</td></tr>)}</tbody>
+                  <thead><tr style={{ background: COLORS.paper, color: COLORS.inkSoft }}><th style={tableHeadStyle}>Customer</th><th style={tableHeadStyle}>Buyer type</th><th style={tableHeadStyle}>Segment</th><th style={tableHeadStyle}>Phone</th><th style={tableHeadStyle}>Next follow-up</th><th style={tableHeadStyle}>Action</th></tr></thead>
+                  <tbody>{customers.map((customer) => <tr key={customer.id} className="row-hover" style={{ borderBottom: `1px solid ${COLORS.paperEdge}` }}><td style={tableCellStyle}>{customer.name}</td><td style={tableCellStyle}>{customer.type}</td><td style={tableCellStyle}>{customer.segment}</td><td style={tableCellStyle}>{customer.phone || "-"}</td><td style={tableCellStyle}>{customer.nextFollowUp || "-"}</td><td style={tableCellStyle}><button onClick={() => deleteCustomer(customer.id)} style={{ border: "none", background: "none", color: COLORS.alert, cursor: "pointer", fontSize: 12 }}>Remove</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -693,6 +740,7 @@ export default function SupermarketDashboard() {
               <SectionLabel>Customer Follow-up</SectionLabel>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{customers.map((customer) => <div key={customer.id} style={{ border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 12, background: COLORS.paper }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><strong style={{ fontSize: 14 }}>{customer.name}</strong><span style={{ fontSize: 11, background: customer.priority === "High" ? "#FDE7D8" : customer.priority === "Medium" ? "#EAF3E5" : "#F0F0F0", color: COLORS.ink, borderRadius: 999, padding: "4px 8px" }}>{customer.priority}</span></div><div style={{ marginTop: 8, fontSize: 12, color: COLORS.inkSoft }}>Next follow-up: {customer.nextFollowUp} • Buyer type: {customer.type}</div></div>)}</div>
             </div>
+          </div>
           </div>
         )}
 

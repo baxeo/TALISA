@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "Apex Traders",
+    "type": "Large Buyer",
+    "segment": "Export",
+    "phone": "",
+    "email": "",
+    "lastOrder": "2026-06-20",
+    "nextFollowUp": "2026-06-24",
+    "priority": "High",
+    "notes": "Priority export customer"
+  },
+  {
+    "id": 2,
+    "name": "Kampala Retailers",
+    "type": "Retail Buyer",
+    "segment": "Local",
+    "phone": "",
+    "email": "",
+    "lastOrder": "2026-06-17",
+    "nextFollowUp": "2026-06-23",
+    "priority": "Medium",
+    "notes": "Monthly retail order"
+  },
+  {
+    "id": 3,
+    "name": "Nairobi Wholesale Co.",
+    "type": "Large Buyer",
+    "segment": "Regional",
+    "phone": "",
+    "email": "",
+    "lastOrder": "2026-06-18",
+    "nextFollowUp": "2026-06-22",
+    "priority": "High",
+    "notes": "Regional wholesale customer"
+  },
+  {
+    "id": 4,
+    "name": "Mwanza Farmers Group",
+    "type": "Small Buyer",
+    "segment": "Local",
+    "phone": "",
+    "email": "",
+    "lastOrder": "2026-06-16",
+    "nextFollowUp": "2026-06-26",
+    "priority": "Low",
+    "notes": "Small buyer group"
+  },
+  {
+    "id": 5,
+    "name": "Coastal Nuts Ltd.",
+    "type": "Export Buyer",
+    "segment": "Export",
+    "phone": "",
+    "email": "",
+    "lastOrder": "2026-06-19",
+    "nextFollowUp": "2026-06-25",
+    "priority": "High",
+    "notes": "Export follow-up required"
+  }
+]
