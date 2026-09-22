@@ -233,9 +233,10 @@ function SectionLabel({ children }) {
 // ---------- Main App ----------
 export default function SupermarketDashboard() {
   const isDashboardRoute = window.location.pathname === "/dashboard" || window.location.pathname === "/dashboard/";
+  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/admin/";
   const isHostedWebsite = window.location.hostname !== "localhost"
     && window.location.hostname !== "127.0.0.1";
-  const isPublicWebsite = !isDashboardRoute && (import.meta.env.VITE_PUBLIC_SITE_ONLY === "true"
+  const isPublicWebsite = !isDashboardRoute && !isAdminRoute && (import.meta.env.VITE_PUBLIC_SITE_ONLY === "true"
     || isHostedWebsite
     || window.location.pathname === "/website"
     || window.location.pathname === "/website/");
@@ -243,7 +244,7 @@ export default function SupermarketDashboard() {
   const [inputMode, setInputMode] = useState("upload");
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState("");
-  const [view, setView] = useState(isPublicWebsite ? "storefront" : "overview");
+  const [view, setView] = useState(isAdminRoute ? "admin" : isPublicWebsite ? "storefront" : "overview");
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
   const [adminError, setAdminError] = useState("");
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -926,6 +927,18 @@ export default function SupermarketDashboard() {
                 </table>
               </div>
             </div>
+            {adminLoggedIn && <div style={{ gridColumn: "1 / -1", background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <SectionLabel>Customer Records</SectionLabel>
+                <button onClick={() => setView("customers")} style={{ padding: "8px 12px", border: `1px solid ${COLORS.forest}`, background: "#fff", color: COLORS.forest, borderRadius: 4, fontWeight: 600, fontSize: 12 }}>Open customer management</button>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead><tr style={{ background: COLORS.paper, color: COLORS.inkSoft }}><th style={tableHeadStyle}>Customer</th><th style={tableHeadStyle}>Type</th><th style={tableHeadStyle}>Contact</th><th style={tableHeadStyle}>Next follow-up</th><th style={tableHeadStyle}>Priority</th><th style={tableHeadStyle}>Action</th></tr></thead>
+                  <tbody>{customers.map((customer) => <tr key={customer.id} style={{ borderBottom: `1px solid ${COLORS.paperEdge}` }}><td style={tableCellStyle}>{customer.name}</td><td style={tableCellStyle}>{customer.type}</td><td style={tableCellStyle}>{customer.phone || customer.email || "-"}</td><td style={tableCellStyle}>{customer.nextFollowUp || "-"}</td><td style={tableCellStyle}>{customer.priority}</td><td style={tableCellStyle}><button onClick={() => { editCustomer(customer); setView("customers"); }} style={{ border: "none", background: "none", color: COLORS.forest, cursor: "pointer", fontSize: 12 }}>Edit</button></td></tr>)}</tbody>
+                </table>
+              </div>
+            </div>}
           </div>
         )}
       </div>
