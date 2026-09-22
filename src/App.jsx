@@ -232,12 +232,13 @@ function SectionLabel({ children }) {
 
 // ---------- Main App ----------
 export default function SupermarketDashboard() {
+  const isDashboardRoute = window.location.pathname === "/dashboard" || window.location.pathname === "/dashboard/";
   const isHostedWebsite = window.location.hostname !== "localhost"
     && window.location.hostname !== "127.0.0.1";
-  const isPublicWebsite = import.meta.env.VITE_PUBLIC_SITE_ONLY === "true"
+  const isPublicWebsite = !isDashboardRoute && (import.meta.env.VITE_PUBLIC_SITE_ONLY === "true"
     || isHostedWebsite
     || window.location.pathname === "/website"
-    || window.location.pathname === "/website/";
+    || window.location.pathname === "/website/");
   const [rows, setRows] = useState([]);
   const [inputMode, setInputMode] = useState("upload");
   const [fileName, setFileName] = useState("");

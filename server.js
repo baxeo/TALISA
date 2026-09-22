@@ -172,5 +172,5 @@ app.get(/^(?!\/api).*/, (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`BAXEO backend is running on http://localhost:${port}`);
+  console.log(`Mwarabu Nuts backend is running on http://localhost:${port}`);
 });

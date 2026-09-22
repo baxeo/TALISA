@@ -16,6 +16,12 @@ Public website-only link:
 
     http://localhost:5000/website
 
+Internal management dashboard:
+
+    http://localhost:5000/dashboard
+
+Use `/dashboard` for Analysis, Customers, Pricing, and Admin. The public root can remain storefront-only on Render.
+
 This link shows only the BAXEO storefront. The internal sales dashboard remains at the root URL:
 
     http://localhost:5000/
