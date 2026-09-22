@@ -33,13 +33,15 @@ const BUYER_TYPES = ["Large Buyer", "Small Buyer", "Retail Buyer", "Export Buyer
 const SALE_CHANNELS = ["Wholesale", "Retail", "Direct Sales", "Export"];
 
 const SAMPLE_PRODUCTS = [
-  { id: 1, name: "W180", grade: "Premium", largePrice: 9.8, smallPrice: 8.5, stock: 640, status: "Active", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80", description: "Large premium cashew kernels with a rich texture and smooth finish suited for premium buyers." },
-  { id: 2, name: "W210", grade: "Grade A", largePrice: 9.1, smallPrice: 7.9, stock: 710, status: "Active", image: "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&w=900&q=80", description: "Balanced-size kernels ideal for quality-focused retail and wholesale orders." },
-  { id: 3, name: "W240", grade: "Grade A", largePrice: 8.4, smallPrice: 7.3, stock: 950, status: "Active", image: "https://images.unsplash.com/photo-1471193945509-9ad0617afabf?auto=format&fit=crop&w=900&q=80", description: "A versatile cashew grade that combines value, consistency, and strong market demand." },
-  { id: 4, name: "W320", grade: "Grade B", largePrice: 7.8, smallPrice: 6.7, stock: 1180, status: "Active", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80", description: "High-volume, affordable cashew option for bulk buyers and repeat regular trade." },
-  { id: 5, name: "White Whole", grade: "Premium", largePrice: 8.9, smallPrice: 7.8, stock: 580, status: "Low", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80", description: "White whole kernels selected for premium presentation and top-quality nutrition appeal." },
-  { id: 6, name: "Scorched", grade: "Grade C", largePrice: 7.1, smallPrice: 6.2, stock: 820, status: "Active", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80", description: "Excellent for cost-effective processing, snacks, and value-driven packaging needs." },
+  { id: 1, name: "W180", grade: "Premium", largePrice: 9.8, smallPrice: 8.5, stock: 640, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/2/20/Anacardium_occidentale%2C_the_Cashew_%2817005726289%29.jpg", description: "Large premium cashew kernels with a rich texture and smooth finish suited for premium buyers." },
+  { id: 2, name: "W210", grade: "Grade A", largePrice: 9.1, smallPrice: 7.9, stock: 710, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/6/67/Anacardium_occidentale_Thailand_2013-05-03wa.JPG", description: "Balanced-size kernels ideal for quality-focused retail and wholesale orders." },
+  { id: 3, name: "W240", grade: "Grade A", largePrice: 8.4, smallPrice: 7.3, stock: 950, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/d/de/Anacardium_occidentale_Thailand_2013-05-03wb.JPG", description: "A versatile cashew grade that combines value, consistency, and strong market demand." },
+  { id: 4, name: "W320", grade: "Grade B", largePrice: 7.8, smallPrice: 6.7, stock: 1180, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/2/24/Anacardium_occidentale_from_Margarita_island.jpg", description: "High-volume, affordable cashew option for bulk buyers and repeat regular trade." },
+  { id: 5, name: "White Whole", grade: "Premium", largePrice: 8.9, smallPrice: 7.8, stock: 580, status: "Low", image: "https://upload.wikimedia.org/wikipedia/commons/6/64/Cashew_apples.jpg", description: "White whole kernels selected for premium presentation and top-quality nutrition appeal." },
+  { id: 6, name: "Scorched", grade: "Grade C", largePrice: 7.1, smallPrice: 6.2, stock: 820, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Slivered_Almond%2C_Jumbo_Cashew%2C_Kernel_Pistachio_and_Pecan.JPG", description: "Excellent for cost-effective processing, snacks, and value-driven packaging needs." },
 ];
+
+const FALLBACK_CASHEW_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/2/20/Anacardium_occidentale%2C_the_Cashew_%2817005726289%29.jpg";
 
 const SAMPLE_CUSTOMERS = [
   { id: 1, name: "Apex Traders", type: "Large Buyer", segment: "Export", lastOrder: "2026-06-20", nextFollowUp: "2026-06-24", priority: "High" },
@@ -461,7 +463,8 @@ export default function SupermarketDashboard() {
 
   function orderOnWhatsApp(product) {
     const message = `Hello BAXEO, I would like to order ${product.name} cashews. Please share availability and delivery options.`;
-    window.open(`https://wa.me/256700000000?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "256700000000";
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
   async function addCustomer() {
@@ -517,8 +520,9 @@ export default function SupermarketDashboard() {
         .tab-btn { transition: all 0.15s ease; cursor: pointer; }
         .row-hover:hover { background: ${COLORS.sage}22; }
         .storefront-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
-        .storefront-hero-image { min-height: 330px; border-radius: 10px; background: linear-gradient(135deg, rgba(31,77,58,0.1), rgba(226,166,59,0.15)), url('https://images.unsplash.com/photo-1606312619070-d48b4c652a52?auto=format&fit=crop&w=1200&q=85') center/cover; }
+        .storefront-hero-image { min-height: 330px; border-radius: 10px; background: linear-gradient(135deg, rgba(31,77,58,0.1), rgba(226,166,59,0.15)), url('https://upload.wikimedia.org/wikipedia/commons/6/64/Cashew_apples.jpg') center/cover; }
         .storefront-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .storefront-trust { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; }
         .storefront-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .storefront-card:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(31,77,58,0.12) !important; }
         .storefront-category { overflow-x: auto; scrollbar-width: none; }
@@ -527,6 +531,7 @@ export default function SupermarketDashboard() {
           .storefront-hero { grid-template-columns: 1fr; gap: 18px; }
           .storefront-hero-image { min-height: 220px; order: -1; }
           .storefront-grid { grid-template-columns: 1fr; }
+          .storefront-trust { grid-template-columns: 1fr; }
           .storefront-heading { font-size: 42px !important; }
           .storefront-actions { flex-direction: column; align-items: stretch !important; }
           .storefront-actions button { width: 100%; justify-content: center; }
@@ -795,7 +800,7 @@ export default function SupermarketDashboard() {
             <div className="storefront-grid">
               {storefrontProducts.map((product) => (
                 <div key={product.id} className="storefront-card" style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, overflow: "hidden", boxShadow: "0 8px 20px rgba(0,0,0,0.04)" }}>
-                  <img src={product.image} alt={product.name} style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
+                  <img src={product.image} alt={`${product.name} cashew product`} onError={(event) => { event.currentTarget.src = FALLBACK_CASHEW_IMAGE; }} style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
                   <div style={{ padding: 18 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                       <h3 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{product.name}</h3>
@@ -822,6 +827,19 @@ export default function SupermarketDashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="storefront-trust" style={{ marginTop: 24 }}>
+              <div style={{ background: COLORS.forest, color: "#fff", borderRadius: 10, padding: 20 }}>
+                <div style={{ color: COLORS.amber, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Built for serious buyers</div>
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, margin: "8px 0" }}>Reliable supply. Clear pricing. Direct contact.</h3>
+                <p style={{ color: COLORS.sage, lineHeight: 1.55, fontSize: 13, margin: 0 }}>Ask about bulk volumes, export requirements, packaging, delivery, and current availability through WhatsApp.</p>
+              </div>
+              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><CheckCircle2 color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>Wholesale & export</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>Large-buyer pricing for traders, distributors, processors, and export partners.</p></div>
+              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><MessageCircle color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>Fast response</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>Send your preferred grade and quantity. Our sales team will confirm the next steps.</p></div>
+            </div>
+            <div style={{ marginTop: 18, padding: "18px 0 8px", borderTop: `1px solid ${COLORS.paperEdge}`, display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", color: COLORS.inkSoft, fontSize: 12 }}>
+              <span><strong style={{ color: COLORS.ink }}>BAXEO AFRICA</strong> · Premium cashew supply</span>
+              <span>Instagram-ready product catalogue · Orders via WhatsApp</span>
             </div>
           </div>
         )}

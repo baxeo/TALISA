@@ -38,6 +38,28 @@ After deployment, the Vercel domain root opens only the public website:
 
 The backend in `server.js` is not deployed by Vercel as a persistent Node server. Deploy it separately on Render, Railway, or another Node host, then add its URL as a frontend environment variable when you are ready to connect production data.
 
+## Render full-stack deployment
+
+This repository also includes `render.yaml`. In Render, choose **New + > Blueprint** and select the GitHub repository. Render will use the blueprint to:
+
+- build the Vite frontend with `npm run build`
+- start the Express backend with `npm start`
+- serve the public website from the root domain
+- expose `/api/health`, `/api/products`, and `/api/customers`
+- preserve `data/customers.json` on the attached persistent disk
+
+Add this environment variable in Render with your real WhatsApp number in international format, without `+` or spaces:
+
+    VITE_WHATSAPP_NUMBER=2567XXXXXXXX
+
+The final public website will be at the Render URL, for example:
+
+    https://baxeo-africa.onrender.com/
+
+The storefront uses real cashew photographs from Wikimedia Commons and includes a fallback image if an image host is temporarily rate-limited. Add the real WhatsApp number before launch; never publish the placeholder number.
+
+For Instagram, copy the Render URL into the profile link or post caption. The page includes mobile-first layout, Open Graph metadata, Twitter metadata, product images, prices, stock, buyer categories, and direct WhatsApp order actions.
+
 You can confirm the backend directly at `http://localhost:5000/api/health` or view products at `http://localhost:5000/api/products`.
 
 ## Customer database
