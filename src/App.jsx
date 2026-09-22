@@ -41,7 +41,13 @@ const SAMPLE_PRODUCTS = [
   { id: 6, name: "Scorched", grade: "Grade C", largePrice: 7.1, smallPrice: 6.2, stock: 820, status: "Active", image: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Slivered_Almond%2C_Jumbo_Cashew%2C_Kernel_Pistachio_and_Pecan.JPG", description: "Excellent for cost-effective processing, snacks, and value-driven packaging needs." },
 ];
 
-const FALLBACK_CASHEW_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/2/20/Anacardium_occidentale%2C_the_Cashew_%2817005726289%29.jpg";
+const FALLBACK_CASHEW_IMAGE = "https://mwarabunuts.com/assets/cashew-products.png";
+
+const MWARABU_PRODUCTS = [
+  { id: "whole-kernels", name: "Whole kernels", grade: "Premium & standard options", largePrice: 0, smallPrice: 0, stock: 0, status: "Sample-led", image: "https://mwarabunuts.com/assets/cashew-products.png", description: "For snacking, gifting, hospitality, and retail applications. Grade and specification are confirmed per available lot." },
+  { id: "broken-pieces", name: "Broken & pieces", grade: "Ingredient applications", largePrice: 0, smallPrice: 0, stock: 0, status: "On request", image: "https://mwarabunuts.com/assets/quality-inspection.png", description: "Suitable for confectionery, bakery, nut butter, and food production requirements subject to requested specification." },
+  { id: "raw-cashew", name: "Raw cashew nuts", grade: "Seasonal bulk discussions", largePrice: 0, smallPrice: 0, stock: 0, status: "Seasonal", image: "https://mwarabunuts.com/assets/cashew-products.png", description: "Structured sourcing conversations for verified bulk buyers, with origin, season, quantity, and documentation discussed upfront." },
+];
 
 const SAMPLE_CUSTOMERS = [
   { id: 1, name: "Apex Traders", type: "Large Buyer", segment: "Export", lastOrder: "2026-06-20", nextFollowUp: "2026-06-24", priority: "High" },
@@ -291,10 +297,11 @@ export default function SupermarketDashboard() {
   const stats = useMemo(() => preprocess(rows), [rows]);
   const dailyReport = useMemo(() => buildDailySalesReport(rows), [rows]);
   const pricingRows = useMemo(() => buildPricingRows(products), [products]);
-  const storefrontCategories = ["All products", ...Array.from(new Set(SAMPLE_PRODUCTS.map((product) => product.grade)))];
+  const publicProducts = isPublicWebsite ? MWARABU_PRODUCTS : SAMPLE_PRODUCTS;
+  const storefrontCategories = ["All products", ...Array.from(new Set(publicProducts.map((product) => product.grade)))];
   const storefrontProducts = storefrontCategory === "All products"
-    ? SAMPLE_PRODUCTS
-    : SAMPLE_PRODUCTS.filter((product) => product.grade === storefrontCategory);
+    ? publicProducts
+    : publicProducts.filter((product) => product.grade === storefrontCategory);
 
   function normalizeRow(r, idx) {
     const quantity = Number(r.quantity ?? r.qty ?? r.kg ?? 1) || 1;
@@ -462,8 +469,9 @@ export default function SupermarketDashboard() {
   }
 
   function orderOnWhatsApp(product) {
-    const message = `Hello BAXEO, I would like to order ${product.name} cashews. Please share availability and delivery options.`;
-    const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "256700000000";
+    const brand = isPublicWebsite ? "Mwarabu Nuts" : "BAXEO";
+    const message = `Hello ${brand}, I would like to request information about ${product.name} cashews. Please share the available sample, specification, and commercial terms.`;
+    const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || (isPublicWebsite ? "255712935493" : "256700000000");
     window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
@@ -520,7 +528,7 @@ export default function SupermarketDashboard() {
         .tab-btn { transition: all 0.15s ease; cursor: pointer; }
         .row-hover:hover { background: ${COLORS.sage}22; }
         .storefront-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
-        .storefront-hero-image { min-height: 330px; border-radius: 10px; background: linear-gradient(135deg, rgba(31,77,58,0.1), rgba(226,166,59,0.15)), url('https://upload.wikimedia.org/wikipedia/commons/6/64/Cashew_apples.jpg') center/cover; }
+        .storefront-hero-image { min-height: 330px; border-radius: 10px; background: linear-gradient(135deg, rgba(31,77,58,0.1), rgba(226,166,59,0.15)), url('https://mwarabunuts.com/assets/cashew-products.png') center/cover; }
         .storefront-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
         .storefront-trust { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; }
         .storefront-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -781,18 +789,18 @@ export default function SupermarketDashboard() {
           <div style={{ marginTop: 24 }}>
             <div className="storefront-hero" style={{ background: COLORS.forest, color: "#fff", borderRadius: 12, padding: 28, marginBottom: 24, overflow: "hidden" }}>
               <div>
-                <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.amber }}>BAXEO CASHEW STORE</div>
-              <h2 className="storefront-heading" style={{ fontSize: 56, lineHeight: 0.94, margin: "12px 0 16px", fontFamily: "'Barlow Condensed', sans-serif", maxWidth: 530 }}>Harvested with care. Delivered with confidence.</h2>
-              <p style={{ margin: 0, maxWidth: 560, color: COLORS.sage, lineHeight: 1.6 }}>Premium cashew kernels from BAXEO Africa for retail, wholesale, and export buyers. Choose your grade and speak directly with our sales team.</p>
+                <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.amber }}>{isPublicWebsite ? "MWARABU NUTS · TANZANIA" : "BAXEO CASHEW STORE"}</div>
+              <h2 className="storefront-heading" style={{ fontSize: 56, lineHeight: 0.94, margin: "12px 0 16px", fontFamily: "'Barlow Condensed', sans-serif", maxWidth: 530 }}>{isPublicWebsite ? "Tanzania's cashew story, ready for global business." : "Harvested with care. Delivered with confidence."}</h2>
+              <p style={{ margin: 0, maxWidth: 560, color: COLORS.sage, lineHeight: 1.6 }}>{isPublicWebsite ? "Connect directly for whole kernels, broken pieces, and seasonal raw cashew discussions. Start with a clear sample and a structured buyer requirement." : "Premium cashew kernels from BAXEO Africa for retail, wholesale, and export buyers. Choose your grade and speak directly with our sales team."}</p>
               <div className="storefront-actions" style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 22 }}>
                 <button onClick={() => document.getElementById("baxeo-products")?.scrollIntoView({ behavior: "smooth" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", background: COLORS.amber, color: COLORS.ink, border: "none", borderRadius: 5, fontWeight: 700 }}>Explore products <ArrowRight size={15} /></button>
-                <button onClick={() => orderOnWhatsApp({ name: "BAXEO cashew products" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", background: "transparent", color: "#fff", border: `1px solid ${COLORS.sage}`, borderRadius: 5, fontWeight: 700 }}><MessageCircle size={16} /> WhatsApp us</button>
+                <button onClick={() => orderOnWhatsApp({ name: isPublicWebsite ? "a Mwarabu Nuts sample" : "BAXEO cashew products" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", background: "transparent", color: "#fff", border: `1px solid ${COLORS.sage}`, borderRadius: 5, fontWeight: 700 }}><MessageCircle size={16} /> {isPublicWebsite ? "Request a sample" : "WhatsApp us"}</button>
               </div>
               </div>
               <div className="storefront-hero-image" aria-label="BAXEO cashew products" />
             </div>
 
-            <div id="baxeo-products" style={{ marginBottom: 14 }}><SectionLabel>Shop the harvest</SectionLabel><div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: -8 }}>Every grade is packed for quality, consistency, and reliable supply.</div></div>
+            <div id="baxeo-products" style={{ marginBottom: 14 }}><SectionLabel>{isPublicWebsite ? "The product desk" : "Shop the harvest"}</SectionLabel><div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: -8 }}>{isPublicWebsite ? "Buy with clarity. Start with a sample, then discuss the commercial next step." : "Every grade is packed for quality, consistency, and reliable supply."}</div></div>
             <div className="storefront-category" style={{ display: "flex", gap: 8, marginBottom: 18, paddingBottom: 4 }}>
               {storefrontCategories.map((category) => <button key={category} onClick={() => setStorefrontCategory(category)} style={{ whiteSpace: "nowrap", padding: "9px 13px", borderRadius: 999, border: `1px solid ${storefrontCategory === category ? COLORS.forest : COLORS.paperEdge}`, background: storefrontCategory === category ? COLORS.forest : "#fff", color: storefrontCategory === category ? "#fff" : COLORS.inkSoft, fontSize: 12, fontWeight: 700 }}>{category}</button>)}
             </div>
@@ -809,7 +817,9 @@ export default function SupermarketDashboard() {
                     <div style={{ marginTop: 8, fontSize: 12, color: COLORS.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em" }}>{product.grade}</div>
                     <p style={{ color: COLORS.inkSoft, lineHeight: 1.6, margin: "12px 0" }}>{product.description}</p>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+                    {isPublicWebsite ? (
+                      <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.paperEdge}`, borderRadius: 8, padding: 12, marginTop: 10, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>Availability, grade, specification, and commercial terms are confirmed per inquiry.</div>
+                    ) : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
                       <div style={{ background: COLORS.paper, border: `1px solid ${COLORS.paperEdge}`, borderRadius: 8, padding: 10 }}>
                         <div style={{ fontSize: 11, color: COLORS.inkSoft, textTransform: "uppercase", letterSpacing: "0.06em" }}>Large buyer</div>
                         <div style={{ fontSize: 22, fontWeight: 700, marginTop: 5 }}>${product.largePrice.toFixed(2)}</div>
@@ -818,11 +828,11 @@ export default function SupermarketDashboard() {
                         <div style={{ fontSize: 11, color: COLORS.inkSoft, textTransform: "uppercase", letterSpacing: "0.06em" }}>Small buyer</div>
                         <div style={{ fontSize: 22, fontWeight: 700, marginTop: 5 }}>${product.smallPrice.toFixed(2)}</div>
                       </div>
-                    </div>
+                    </div>}
 
                     <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: `1px solid ${COLORS.paperEdge}` }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: COLORS.inkSoft }}><CheckCircle2 size={14} color={COLORS.forestSoft} /> In stock: {product.stock} kg</span>
-                      <button onClick={() => orderOnWhatsApp(product)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 12px", background: COLORS.forest, color: "#fff", border: "none", borderRadius: 6, fontWeight: 600 }}><MessageCircle size={14} /> Order</button>
+                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: COLORS.inkSoft }}><CheckCircle2 size={14} color={COLORS.forestSoft} /> {isPublicWebsite ? "Request a sample" : `In stock: ${product.stock} kg`}</span>
+                      <button onClick={() => orderOnWhatsApp(product)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 12px", background: COLORS.forest, color: "#fff", border: "none", borderRadius: 6, fontWeight: 600 }}><MessageCircle size={14} /> {isPublicWebsite ? "Discuss" : "Order"}</button>
                     </div>
                   </div>
                 </div>
@@ -830,16 +840,16 @@ export default function SupermarketDashboard() {
             </div>
             <div className="storefront-trust" style={{ marginTop: 24 }}>
               <div style={{ background: COLORS.forest, color: "#fff", borderRadius: 10, padding: 20 }}>
-                <div style={{ color: COLORS.amber, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Built for serious buyers</div>
-                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, margin: "8px 0" }}>Reliable supply. Clear pricing. Direct contact.</h3>
-                <p style={{ color: COLORS.sage, lineHeight: 1.55, fontSize: 13, margin: 0 }}>Ask about bulk volumes, export requirements, packaging, delivery, and current availability through WhatsApp.</p>
+                <div style={{ color: COLORS.amber, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>{isPublicWebsite ? "Mwarabu Nuts trade desk" : "Built for serious buyers"}</div>
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, margin: "8px 0" }}>{isPublicWebsite ? "See it. Review it. Then discuss the order." : "Reliable supply. Clear pricing. Direct contact."}</h3>
+                <p style={{ color: COLORS.sage, lineHeight: 1.55, fontSize: 13, margin: 0 }}>{isPublicWebsite ? "Share product, preferred grade, volume, destination, packaging, and target timing. Align on a sample before a commercial commitment." : "Ask about bulk volumes, export requirements, packaging, delivery, and current availability through WhatsApp."}</p>
               </div>
-              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><CheckCircle2 color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>Wholesale & export</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>Large-buyer pricing for traders, distributors, processors, and export partners.</p></div>
-              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><MessageCircle color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>Fast response</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>Send your preferred grade and quantity. Our sales team will confirm the next steps.</p></div>
+              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><CheckCircle2 color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>{isPublicWebsite ? "Tanzania origin" : "Wholesale & export"}</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>{isPublicWebsite ? "Local presence, direct communication, and global ambition for serious cashew buyers." : "Large-buyer pricing for traders, distributors, processors, and export partners."}</p></div>
+              <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><MessageCircle color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>{isPublicWebsite ? "Trade inquiry" : "Fast response"}</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>{isPublicWebsite ? "WhatsApp +255 712 935 493 or email trade@mwarabunuts.com." : "Send your preferred grade and quantity. Our sales team will confirm the next steps."}</p></div>
             </div>
             <div style={{ marginTop: 18, padding: "18px 0 8px", borderTop: `1px solid ${COLORS.paperEdge}`, display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", color: COLORS.inkSoft, fontSize: 12 }}>
-              <span><strong style={{ color: COLORS.ink }}>BAXEO AFRICA</strong> · Premium cashew supply</span>
-              <span>Instagram-ready product catalogue · Orders via WhatsApp</span>
+              <span><strong style={{ color: COLORS.ink }}>{isPublicWebsite ? "MWARABU NUTS" : "BAXEO AFRICA"}</strong> · {isPublicWebsite ? "Cashew sourcing · Whole sale · Retail" : "Premium cashew supply"}</span>
+              {isPublicWebsite ? <span><a href="https://www.instagram.com/mwarabu_nuts/" target="_blank" rel="noreferrer" style={{ color: COLORS.forest }}>Instagram</a> · <a href="mailto:trade@mwarabunuts.com" style={{ color: COLORS.forest }}>trade@mwarabunuts.com</a> · <a href="https://www.cashew.go.tz/" target="_blank" rel="noreferrer" style={{ color: COLORS.forest }}>Cashewnut Board</a></span> : <span>Instagram-ready product catalogue · Orders via WhatsApp</span>}
             </div>
           </div>
         )}
