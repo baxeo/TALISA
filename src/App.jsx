@@ -244,11 +244,14 @@ export default function SupermarketDashboard() {
   const [parseError, setParseError] = useState("");
   const [view, setView] = useState(isPublicWebsite ? "storefront" : "overview");
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [adminError, setAdminError] = useState("");
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [products, setProducts] = useState(SAMPLE_PRODUCTS);
   const [customers, setCustomers] = useState(SAMPLE_CUSTOMERS);
   const [newProduct, setNewProduct] = useState({ name: "", grade: "Premium", largePrice: "", smallPrice: "", stock: "" });
+  const [editingProductId, setEditingProductId] = useState(null);
   const [newCustomer, setNewCustomer] = useState({ name: "", type: BUYER_TYPES[0], segment: "Local", phone: "", email: "", nextFollowUp: "", priority: "Medium", notes: "" });
+  const [editingCustomerId, setEditingCustomerId] = useState(null);
   const [storefrontCategory, setStorefrontCategory] = useState("All products");
   const [backendStatus, setBackendStatus] = useState("checking");
   const fileInputRef = useRef(null);
@@ -393,6 +396,7 @@ export default function SupermarketDashboard() {
   }
 
   function handleAdminLogin() {
+    setAdminError("");
     if (loginForm.username === "admin" && loginForm.password === "baxeo123") {
       setAdminLoggedIn(true);
       setLoginForm({ username: "", password: "" });
@@ -410,10 +414,7 @@ export default function SupermarketDashboard() {
         setLoginForm({ username: "", password: "" });
       })
       .catch(() => {
-        if (loginForm.username === "admin" && loginForm.password === "baxeo123") {
-          setAdminLoggedIn(true);
-          setLoginForm({ username: "", password: "" });
-        }
+        setAdminError("Invalid username or password.");
       });
   }
 
@@ -434,7 +435,10 @@ export default function SupermarketDashboard() {
   }
 
   function addProduct() {
-    if (!newProduct.name || !newProduct.largePrice || !newProduct.smallPrice) return;
+    if (!newProduct.name || !newProduct.largePrice || !newProduct.smallPrice) {
+      setAdminError("Product name and both buyer prices are required.");
+      return;
+    }
     const payload = {
       name: newProduct.name,
       grade: newProduct.grade,
@@ -444,52 +448,63 @@ export default function SupermarketDashboard() {
       status: "Active",
     };
 
-    submitProductToBackend(payload).then((res) => {
+    const request = editingProductId
+      ? fetch(`/api/products/${editingProductId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      : submitProductToBackend(payload);
+
+    request.then((res) => {
       if (!res.ok) return;
       return res.json();
     }).then((newItem) => {
       if (!newItem) return;
-      setProducts((prev) => [...prev, newItem]);
+      setProducts((prev) => editingProductId ? prev.map((product) => product.id === editingProductId ? newItem : product) : [...prev, newItem]);
+      setEditingProductId(null);
     }).catch(() => {
-      setProducts((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          name: payload.name,
-          grade: payload.grade,
-          largePrice: payload.largePrice,
-          smallPrice: payload.smallPrice,
-          stock: payload.stock,
-          status: "Active",
-        },
-      ]);
+      setAdminError("Could not save the product. Check that the backend is running.");
     });
 
     setNewProduct({ name: "", grade: "Premium", largePrice: "", smallPrice: "", stock: "" });
   }
 
   function orderOnWhatsApp(product) {
-    const brand = isPublicWebsite ? "Mwarabu Nuts" : "BAXEO";
+    const brand = "Mwarabu Nuts";
     const message = `Hello ${brand}, I would like to request information about ${product.name} cashews. Please share the available sample, specification, and commercial terms.`;
     const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || (isPublicWebsite ? "255712935493" : "256700000000");
     window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
   async function addCustomer() {
-    if (!newCustomer.name) return;
+    if (!newCustomer.name || !newCustomer.phone || !newCustomer.email) return;
     try {
-      const response = await fetch("/api/customers", {
-        method: "POST",
+      const response = await fetch(editingCustomerId ? `/api/customers/${editingCustomerId}` : "/api/customers", {
+        method: editingCustomerId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCustomer),
       });
       if (!response.ok) return;
       const savedCustomer = await response.json();
-      setCustomers((prev) => [...prev, savedCustomer]);
+      setCustomers((prev) => editingCustomerId ? prev.map((customer) => customer.id === editingCustomerId ? savedCustomer : customer) : [...prev, savedCustomer]);
+      setEditingCustomerId(null);
       setNewCustomer({ name: "", type: BUYER_TYPES[0], segment: "Local", phone: "", email: "", nextFollowUp: "", priority: "Medium", notes: "" });
     } catch (error) {
       setBackendStatus("offline");
     }
+  }
+
+  function editCustomer(customer) {
+    setEditingCustomerId(customer.id);
+    setNewCustomer({ name: customer.name || "", type: customer.type || BUYER_TYPES[0], segment: customer.segment || "Local", phone: customer.phone || "", email: customer.email || "", nextFollowUp: customer.nextFollowUp || "", priority: customer.priority || "Medium", notes: customer.notes || "" });
+  }
+
+  function editProduct(product) {
+    setEditingProductId(product.id);
+    setNewProduct({ name: product.name, grade: product.grade, largePrice: product.largePrice, smallPrice: product.smallPrice, stock: product.stock });
+  }
+
+  async function deleteProduct(productId) {
+    const response = await fetch(`/api/products/${productId}`, { method: "DELETE" });
+    if (!response.ok) return;
+    setProducts((prev) => prev.filter((product) => product.id !== productId));
   }
 
   async function deleteCustomer(customerId) {
@@ -550,13 +565,13 @@ export default function SupermarketDashboard() {
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 28px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
             <Receipt size={20} color={COLORS.amber} />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: COLORS.amber, letterSpacing: "0.15em", textTransform: "uppercase" }}>{isPublicWebsite ? "BAXEO AFRICA" : "BAXEO SALES INSIGHT"}</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: COLORS.amber, letterSpacing: "0.15em", textTransform: "uppercase" }}>MWARABU NUTS</span>
             {!isPublicWebsite && <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${backendStatus === "connected" ? "#9BC5A8" : "#D7B27A"}`, color: backendStatus === "connected" ? "#D9F1DE" : COLORS.amberSoft, borderRadius: 999, padding: "5px 9px", fontSize: 10, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: backendStatus === "connected" ? "#7BD18D" : COLORS.amber }} />
               {backendStatus === "connected" ? "Frontend + backend connected" : backendStatus === "checking" ? "Checking backend" : "Frontend demo mode"}
             </span>}
           </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 44, textTransform: "uppercase", letterSpacing: "0.01em", color: "#fff", margin: "4px 0 8px 0" }}>{isPublicWebsite ? "Premium cashews from BAXEO Africa" : "BAXEO SALES INSIGHT"}</h1>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 44, textTransform: "uppercase", letterSpacing: "0.01em", color: "#fff", margin: "4px 0 8px 0" }}>{isPublicWebsite ? "Premium cashews from Tanzania" : "MWARABU NUTS SALES INSIGHT"}</h1>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: COLORS.sage, maxWidth: 560, lineHeight: 1.5 }}>
             {isPublicWebsite ? "Quality cashew kernels for retail, wholesale, and export buyers." : "Track daily sales, customer buying behavior, and product performance — upload a file or enter data manually — and monitor revenue, top sellers, repeat buyers, and sales trends in one clear dashboard."}
           </p>
@@ -728,15 +743,15 @@ export default function SupermarketDashboard() {
         {view === "customers" && (
           <div style={{ marginTop: 24 }}>
             <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 18, marginBottom: 18 }}>
-              <SectionLabel>Add Customer Record</SectionLabel>
+              <SectionLabel>{editingCustomerId ? "Edit Customer Record" : "Add Customer Record"}</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
                 <Field label="Customer name"><input value={newCustomer.name} onChange={(e) => setNewCustomer((form) => ({ ...form, name: e.target.value }))} placeholder="Company or buyer name" style={inputStyle} /></Field>
                 <Field label="Buyer type"><select value={newCustomer.type} onChange={(e) => setNewCustomer((form) => ({ ...form, type: e.target.value }))} style={inputStyle}>{BUYER_TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
                 <Field label="Segment"><select value={newCustomer.segment} onChange={(e) => setNewCustomer((form) => ({ ...form, segment: e.target.value }))} style={inputStyle}>{["Local", "Regional", "Export"].map((segment) => <option key={segment}>{segment}</option>)}</select></Field>
-                <Field label="Phone"><input value={newCustomer.phone} onChange={(e) => setNewCustomer((form) => ({ ...form, phone: e.target.value }))} placeholder="+256..." style={inputStyle} /></Field>
-                <Field label="Email"><input type="email" value={newCustomer.email} onChange={(e) => setNewCustomer((form) => ({ ...form, email: e.target.value }))} placeholder="buyer@email.com" style={inputStyle} /></Field>
+                <Field label="Phone"><input required value={newCustomer.phone} onChange={(e) => setNewCustomer((form) => ({ ...form, phone: e.target.value }))} placeholder="+255..." style={inputStyle} /></Field>
+                <Field label="Email"><input required type="email" value={newCustomer.email} onChange={(e) => setNewCustomer((form) => ({ ...form, email: e.target.value }))} placeholder="buyer@email.com" style={inputStyle} /></Field>
                 <Field label="Follow-up"><input type="date" value={newCustomer.nextFollowUp} onChange={(e) => setNewCustomer((form) => ({ ...form, nextFollowUp: e.target.value }))} style={inputStyle} /></Field>
-                <button onClick={addCustomer} style={{ padding: "10px 14px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600, height: 38 }}><Plus size={14} /> Add</button>
+                <button onClick={addCustomer} style={{ padding: "10px 14px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600, height: 38 }}><Plus size={14} /> {editingCustomerId ? "Save" : "Add"}</button>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
@@ -745,7 +760,7 @@ export default function SupermarketDashboard() {
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead><tr style={{ background: COLORS.paper, color: COLORS.inkSoft }}><th style={tableHeadStyle}>Customer</th><th style={tableHeadStyle}>Buyer type</th><th style={tableHeadStyle}>Segment</th><th style={tableHeadStyle}>Phone</th><th style={tableHeadStyle}>Next follow-up</th><th style={tableHeadStyle}>Action</th></tr></thead>
-                  <tbody>{customers.map((customer) => <tr key={customer.id} className="row-hover" style={{ borderBottom: `1px solid ${COLORS.paperEdge}` }}><td style={tableCellStyle}>{customer.name}</td><td style={tableCellStyle}>{customer.type}</td><td style={tableCellStyle}>{customer.segment}</td><td style={tableCellStyle}>{customer.phone || "-"}</td><td style={tableCellStyle}>{customer.nextFollowUp || "-"}</td><td style={tableCellStyle}><button onClick={() => deleteCustomer(customer.id)} style={{ border: "none", background: "none", color: COLORS.alert, cursor: "pointer", fontSize: 12 }}>Remove</button></td></tr>)}</tbody>
+                  <tbody>{customers.map((customer) => <tr key={customer.id} className="row-hover" style={{ borderBottom: `1px solid ${COLORS.paperEdge}` }}><td style={tableCellStyle}>{customer.name}</td><td style={tableCellStyle}>{customer.type}</td><td style={tableCellStyle}>{customer.segment}</td><td style={tableCellStyle}>{customer.phone || "-"}</td><td style={tableCellStyle}>{customer.nextFollowUp || "-"}</td><td style={tableCellStyle}><button onClick={() => editCustomer(customer)} style={{ border: "none", background: "none", color: COLORS.forest, cursor: "pointer", fontSize: 12, marginRight: 8 }}>Edit</button><button onClick={() => deleteCustomer(customer.id)} style={{ border: "none", background: "none", color: COLORS.alert, cursor: "pointer", fontSize: 12 }}>Remove</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -789,18 +804,18 @@ export default function SupermarketDashboard() {
           <div style={{ marginTop: 24 }}>
             <div className="storefront-hero" style={{ background: COLORS.forest, color: "#fff", borderRadius: 12, padding: 28, marginBottom: 24, overflow: "hidden" }}>
               <div>
-                <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.amber }}>{isPublicWebsite ? "MWARABU NUTS · TANZANIA" : "BAXEO CASHEW STORE"}</div>
+                <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.amber }}>MWARABU NUTS · TANZANIA</div>
               <h2 className="storefront-heading" style={{ fontSize: 56, lineHeight: 0.94, margin: "12px 0 16px", fontFamily: "'Barlow Condensed', sans-serif", maxWidth: 530 }}>{isPublicWebsite ? "Tanzania's cashew story, ready for global business." : "Harvested with care. Delivered with confidence."}</h2>
-              <p style={{ margin: 0, maxWidth: 560, color: COLORS.sage, lineHeight: 1.6 }}>{isPublicWebsite ? "Connect directly for whole kernels, broken pieces, and seasonal raw cashew discussions. Start with a clear sample and a structured buyer requirement." : "Premium cashew kernels from BAXEO Africa for retail, wholesale, and export buyers. Choose your grade and speak directly with our sales team."}</p>
+              <p style={{ margin: 0, maxWidth: 560, color: COLORS.sage, lineHeight: 1.6 }}>{isPublicWebsite ? "Connect directly for whole kernels, broken pieces, and seasonal raw cashew discussions. Start with a clear sample and a structured buyer requirement." : "Premium Tanzanian cashews for retail, wholesale, and export buyers. Choose your grade and speak directly with our sales team."}</p>
               <div className="storefront-actions" style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 22 }}>
-                <button onClick={() => document.getElementById("baxeo-products")?.scrollIntoView({ behavior: "smooth" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", background: COLORS.amber, color: COLORS.ink, border: "none", borderRadius: 5, fontWeight: 700 }}>Explore products <ArrowRight size={15} /></button>
-                <button onClick={() => orderOnWhatsApp({ name: isPublicWebsite ? "a Mwarabu Nuts sample" : "BAXEO cashew products" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", background: "transparent", color: "#fff", border: `1px solid ${COLORS.sage}`, borderRadius: 5, fontWeight: 700 }}><MessageCircle size={16} /> {isPublicWebsite ? "Request a sample" : "WhatsApp us"}</button>
+                <button onClick={() => document.getElementById("mwarabu-products")?.scrollIntoView({ behavior: "smooth" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", background: COLORS.amber, color: COLORS.ink, border: "none", borderRadius: 5, fontWeight: 700 }}>Explore products <ArrowRight size={15} /></button>
+                <button onClick={() => orderOnWhatsApp({ name: isPublicWebsite ? "a Mwarabu Nuts sample" : "Mwarabu Nuts cashew products" })} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 15px", background: "transparent", color: "#fff", border: `1px solid ${COLORS.sage}`, borderRadius: 5, fontWeight: 700 }}><MessageCircle size={16} /> {isPublicWebsite ? "Request a sample" : "WhatsApp us"}</button>
               </div>
               </div>
-              <div className="storefront-hero-image" aria-label="BAXEO cashew products" />
+              <div className="storefront-hero-image" aria-label="Mwarabu Nuts cashew products" />
             </div>
 
-            <div id="baxeo-products" style={{ marginBottom: 14 }}><SectionLabel>{isPublicWebsite ? "The product desk" : "Shop the harvest"}</SectionLabel><div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: -8 }}>{isPublicWebsite ? "Buy with clarity. Start with a sample, then discuss the commercial next step." : "Every grade is packed for quality, consistency, and reliable supply."}</div></div>
+            <div id="mwarabu-products" style={{ marginBottom: 14 }}><SectionLabel>{isPublicWebsite ? "The product desk" : "Shop the harvest"}</SectionLabel><div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: -8 }}>{isPublicWebsite ? "Buy with clarity. Start with a sample, then discuss the commercial next step." : "Every grade is packed for quality, consistency, and reliable supply."}</div></div>
             <div className="storefront-category" style={{ display: "flex", gap: 8, marginBottom: 18, paddingBottom: 4 }}>
               {storefrontCategories.map((category) => <button key={category} onClick={() => setStorefrontCategory(category)} style={{ whiteSpace: "nowrap", padding: "9px 13px", borderRadius: 999, border: `1px solid ${storefrontCategory === category ? COLORS.forest : COLORS.paperEdge}`, background: storefrontCategory === category ? COLORS.forest : "#fff", color: storefrontCategory === category ? "#fff" : COLORS.inkSoft, fontSize: 12, fontWeight: 700 }}>{category}</button>)}
             </div>
@@ -848,7 +863,7 @@ export default function SupermarketDashboard() {
               <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 10, padding: 20 }}><MessageCircle color={COLORS.forestSoft} size={20} /><h3 style={{ margin: "10px 0 6px", fontSize: 17 }}>{isPublicWebsite ? "Trade inquiry" : "Fast response"}</h3><p style={{ margin: 0, color: COLORS.inkSoft, fontSize: 13, lineHeight: 1.5 }}>{isPublicWebsite ? "WhatsApp +255 712 935 493 or email trade@mwarabunuts.com." : "Send your preferred grade and quantity. Our sales team will confirm the next steps."}</p></div>
             </div>
             <div style={{ marginTop: 18, padding: "18px 0 8px", borderTop: `1px solid ${COLORS.paperEdge}`, display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", color: COLORS.inkSoft, fontSize: 12 }}>
-              <span><strong style={{ color: COLORS.ink }}>{isPublicWebsite ? "MWARABU NUTS" : "BAXEO AFRICA"}</strong> · {isPublicWebsite ? "Cashew sourcing · Whole sale · Retail" : "Premium cashew supply"}</span>
+              <span><strong style={{ color: COLORS.ink }}>MWARABU NUTS</strong> · {isPublicWebsite ? "Cashew sourcing · Wholesale · Retail" : "Premium cashew supply"}</span>
               {isPublicWebsite ? <span><a href="https://www.instagram.com/mwarabu_nuts/" target="_blank" rel="noreferrer" style={{ color: COLORS.forest }}>Instagram</a> · <a href="mailto:trade@mwarabunuts.com" style={{ color: COLORS.forest }}>trade@mwarabunuts.com</a> · <a href="https://www.cashew.go.tz/" target="_blank" rel="noreferrer" style={{ color: COLORS.forest }}>Cashewnut Board</a></span> : <span>Instagram-ready product catalogue · Orders via WhatsApp</span>}
             </div>
           </div>
@@ -863,19 +878,21 @@ export default function SupermarketDashboard() {
                   <Field label="Username"><input type="text" value={loginForm.username} onChange={(e) => setLoginForm((f) => ({ ...f, username: e.target.value }))} style={inputStyle} /></Field>
                   <Field label="Password"><input type="password" value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} style={inputStyle} /></Field>
                   <button onClick={handleAdminLogin} style={{ padding: "10px 16px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600 }}>Login</button>
+                  {adminError && <div style={{ color: COLORS.alert, fontSize: 12 }}>{adminError}</div>}
                 </div>
               </div>
             ) : (
               <div style={{ background: "#fff", border: `1px solid ${COLORS.paperEdge}`, borderRadius: 6, padding: 24 }}>
-                <SectionLabel>Product Management</SectionLabel>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><SectionLabel>{editingProductId ? "Edit Product" : "Product Management"}</SectionLabel><button onClick={() => setAdminLoggedIn(false)} style={{ border: "none", background: "none", color: COLORS.inkSoft, cursor: "pointer", fontSize: 12 }}>Log out</button></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
                   <Field label="Name"><input type="text" value={newProduct.name} onChange={(e) => setNewProduct((f) => ({ ...f, name: e.target.value }))} style={inputStyle} /></Field>
                   <Field label="Grade"><select value={newProduct.grade} onChange={(e) => setNewProduct((f) => ({ ...f, grade: e.target.value }))} style={inputStyle}>{QUALITY_OPTIONS.map((grade) => <option key={grade} value={grade}>{grade}</option>)}</select></Field>
                   <Field label="Large buyer"><input type="number" step="0.01" value={newProduct.largePrice} onChange={(e) => setNewProduct((f) => ({ ...f, largePrice: e.target.value }))} style={inputStyle} /></Field>
                   <Field label="Small buyer"><input type="number" step="0.01" value={newProduct.smallPrice} onChange={(e) => setNewProduct((f) => ({ ...f, smallPrice: e.target.value }))} style={inputStyle} /></Field>
                   <Field label="Stock"><input type="number" value={newProduct.stock} onChange={(e) => setNewProduct((f) => ({ ...f, stock: e.target.value }))} style={inputStyle} /></Field>
-                  <button onClick={addProduct} style={{ padding: "10px 14px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600, height: 38 }}>Add</button>
+                  <button onClick={addProduct} style={{ padding: "10px 14px", border: "none", background: COLORS.forest, color: "#fff", borderRadius: 4, fontWeight: 600, height: 38 }}>{editingProductId ? "Save" : "Add"}</button>
                 </div>
+                {adminError && <div style={{ marginTop: 10, color: COLORS.alert, fontSize: 12 }}>{adminError}</div>}
               </div>
             )}
 
@@ -890,6 +907,7 @@ export default function SupermarketDashboard() {
                       <th style={tableHeadStyle}>Large</th>
                       <th style={tableHeadStyle}>Small</th>
                       <th style={tableHeadStyle}>Stock</th>
+                      <th style={tableHeadStyle}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -900,6 +918,7 @@ export default function SupermarketDashboard() {
                         <td style={tableCellStyle}>${product.largePrice.toFixed(2)}</td>
                         <td style={tableCellStyle}>${product.smallPrice.toFixed(2)}</td>
                         <td style={tableCellStyle}>{product.stock} kg</td>
+                        <td style={tableCellStyle}><button onClick={() => editProduct(product)} style={{ border: "none", background: "none", color: COLORS.forest, cursor: "pointer", fontSize: 12, marginRight: 8 }}>Edit</button><button onClick={() => deleteProduct(product.id)} style={{ border: "none", background: "none", color: COLORS.alert, cursor: "pointer", fontSize: 12 }}>Remove</button></td>
                       </tr>
                     ))}
                   </tbody>

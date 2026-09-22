@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "name": "W180",
+    "grade": "Premium",
+    "largePrice": 9.8,
+    "smallPrice": 8.5,
+    "stock": 640,
+    "status": "Active"
+  },
+  {
+    "id": 2,
+    "name": "W210",
+    "grade": "Grade A",
+    "largePrice": 9.1,
+    "smallPrice": 7.9,
+    "stock": 710,
+    "status": "Active"
+  },
+  {
+    "id": 3,
+    "name": "W240",
+    "grade": "Grade A",
+    "largePrice": 8.4,
+    "smallPrice": 7.3,
+    "stock": 950,
+    "status": "Active"
+  },
+  {
+    "id": 4,
+    "name": "W320",
+    "grade": "Grade B",
+    "largePrice": 7.8,
+    "smallPrice": 6.7,
+    "stock": 1180,
+    "status": "Active"
+  },
+  {
+    "id": 5,
+    "name": "White Whole",
+    "grade": "Premium",
+    "largePrice": 8.9,
+    "smallPrice": 7.8,
+    "stock": 580,
+    "status": "Low"
+  },
+  {
+    "id": 6,
+    "name": "Scorched",
+    "grade": "Grade C",
+    "largePrice": 7.1,
+    "smallPrice": 6.2,
+    "stock": 820,
+    "status": "Active"
+  }
+]

@@ -12,20 +12,25 @@ const __dirname = path.dirname(__filename);
 const distPath = path.join(__dirname, "dist");
 const dataPath = path.join(__dirname, "data");
 const customersPath = path.join(dataPath, "customers.json");
+const productsPath = path.join(dataPath, "products.json");
 
 app.use(cors());
 app.use(express.json());
 
-const products = [
-  { id: 1, name: "W180", grade: "Premium", largePrice: 9.8, smallPrice: 8.5, stock: 640, status: "Active" },
-  { id: 2, name: "W210", grade: "Grade A", largePrice: 9.1, smallPrice: 7.9, stock: 710, status: "Active" },
-  { id: 3, name: "W240", grade: "Grade A", largePrice: 8.4, smallPrice: 7.3, stock: 950, status: "Active" },
-  { id: 4, name: "W320", grade: "Grade B", largePrice: 7.8, smallPrice: 6.7, stock: 1180, status: "Active" },
-  { id: 5, name: "White Whole", grade: "Premium", largePrice: 8.9, smallPrice: 7.8, stock: 580, status: "Low" },
-  { id: 6, name: "Scorched", grade: "Grade C", largePrice: 7.1, smallPrice: 6.2, stock: 820, status: "Active" },
-];
-
 const sales = [];
+
+function readProducts() {
+  try {
+    return JSON.parse(fs.readFileSync(productsPath, "utf8"));
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeProducts(productList) {
+  fs.mkdirSync(dataPath, { recursive: true });
+  fs.writeFileSync(productsPath, `${JSON.stringify(productList, null, 2)}\n`);
+}
 
 function readCustomers() {
   try {
@@ -41,11 +46,11 @@ function writeCustomers(customerList) {
 }
 
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, message: "BAXEO backend is running" });
+  res.json({ ok: true, message: "Mwarabu Nuts backend is running" });
 });
 
 app.get("/api/products", (req, res) => {
-  res.json(products);
+  res.json(readProducts());
 });
 
 app.post("/api/products", (req, res) => {
@@ -54,8 +59,9 @@ app.post("/api/products", (req, res) => {
     return res.status(400).json({ message: "Name, largePrice, and smallPrice are required" });
   }
 
+  const products = readProducts();
   const newProduct = {
-    id: products.length ? products[products.length - 1].id + 1 : 1,
+    id: products.length ? Math.max(...products.map((product) => product.id)) + 1 : 1,
     name,
     grade: grade || "Premium",
     largePrice: Number(largePrice),
@@ -65,7 +71,27 @@ app.post("/api/products", (req, res) => {
   };
 
   products.push(newProduct);
+  writeProducts(products);
   res.status(201).json(newProduct);
+});
+
+app.put("/api/products/:id", (req, res) => {
+  const products = readProducts();
+  const productIndex = products.findIndex((product) => product.id === Number(req.params.id));
+  if (productIndex === -1) return res.status(404).json({ message: "Product not found" });
+
+  products[productIndex] = { ...products[productIndex], ...req.body, id: products[productIndex].id };
+  writeProducts(products);
+  res.json(products[productIndex]);
+});
+
+app.delete("/api/products/:id", (req, res) => {
+  const products = readProducts();
+  const remainingProducts = products.filter((product) => product.id !== Number(req.params.id));
+  if (remainingProducts.length === products.length) return res.status(404).json({ message: "Product not found" });
+
+  writeProducts(remainingProducts);
+  res.status(204).end();
 });
 
 app.get("/api/customers", (req, res) => {
